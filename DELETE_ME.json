@@ -1,0 +1,26 @@
+{
+    "ipString": "2804:7f4:3b80:ac6f:108b:69f8:470f:1765",
+
+    "ipType": "IPv6",
+    "isBehindProxy": false, //store proxy ip and reduce time of JWT token
+    "proxyIp": null,
+    "device": "Desktop", //
+    "os": "Windows 10", //Other
+    "userAgent": "Chrome 119.0.0", //Other
+    "family": "Chrome", //Other
+    "versionMajor": "119",
+    "versionMinor": "0",
+    "versionPatch": "0",
+    "isSpider": false,
+    "isMobile": false,
+    "userAgentDisplay": "Windows 10 Desktop Chrome 119.0.0", //Other Desktop Other
+    "userAgentRaw": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36", //""
+    "userLanguages": [
+      "en-US",
+      "en",
+      "de-DE",
+      "de",
+      "pt-BR",
+      "pt"
+    ]
+  }
