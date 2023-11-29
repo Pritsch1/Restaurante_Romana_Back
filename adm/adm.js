@@ -6,7 +6,7 @@ const express = require('express');
 const router = express.Router();
 //const cookie = require('cookie');
 /* ---My Files--- */
-const { send_data } = require('.././data_transfer_2sec');
+const { send_data } = require('.././data_transfer/data_transfer_2sec');
 const { create_iv, encrypt_data, decrypt_data, decrypt_data_react } = require('.././encrypt');
 const { validate_signin_request, validate_signup_request } = require('./adm_validate');
 
@@ -27,7 +27,12 @@ router.post('/receive_signin', async (req, res) => {
                 res.end();
             })
             .catch((error) => {
-                res.status(500).send(error);
+                console.log(error);
+                let my_error = error;
+                if (typeof error !== 'string') {
+                    my_error = "?"
+                }                
+                res.status(500).send(my_error);
                 res.end();
             });
     } else {
@@ -38,10 +43,10 @@ router.post('/receive_signin', async (req, res) => {
 /* ---up--- */
 router.post('/receive_signup', async (req, res) => {
     const front_data = decrypt_data_react(req.body.data, REACT_CRYPTOKEY, req.body.iv);
-    if (validate_signup_request(front_data)) {
+    if (validate_signup_request(front_data) === true) {
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
-                reject(new Error('Connection timed out @ RRBA'));
+                reject('Connection timed out @ RRBA');
             }, 20000);
         });
 
@@ -52,11 +57,16 @@ router.post('/receive_signup', async (req, res) => {
                 res.end();
             })
             .catch((error) => {
-                res.status(500).send(error);
+                console.log(error);
+                let my_error = error;
+                if (typeof error !== 'string') {
+                    my_error = "?"
+                }
+                res.status(500).send(my_error);
                 res.end();
             });
     } else {
-        res.status(400).send("Missing Signup Data @ RRBA!");
+        res.status(400).send("Missing Signup Data @ RRBA");
     }
 });
 

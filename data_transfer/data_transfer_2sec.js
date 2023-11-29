@@ -6,36 +6,42 @@ const CRYPTOKEY = process.env.RRCRYPTOKEY;
 /* ---Dependencies--- */
 const net = require('net');
 /* ---My Files--- */
-const { create_iv, encrypt_data, decrypt_data } = require('./encrypt');
+const { create_iv, encrypt_data, decrypt_data } = require('.././encrypt');
+const { validate_packed_data, validate_sealed_data_package } = require('./data_transfer_validate');
 
 function data_packing(data, type) {
-    const iv = create_iv();
-    const iv1 = create_iv();
-    const iv2 = create_iv();
-    const encrypted_data = encrypt_data(data, CRYPTOKEY, iv1);
-    const whoami = encrypt_data(WHOAMI, CRYPTOKEY, iv2);
-    const data_package = {
-        encrypted_data: encrypted_data,
-        iv1: iv1,
-        whoami: whoami,
-        iv2: iv2,
-        type: type
-    };
+    try {
+        const iv = create_iv();
+        const iv1 = create_iv();
+        const iv2 = create_iv();
+        const encrypted_data = encrypt_data(data, CRYPTOKEY, iv1);
+        const whoami = encrypt_data(WHOAMI, CRYPTOKEY, iv2);
+        const data_package = {
+            encrypted_data: encrypted_data,
+            iv1: iv1,
+            whoami: whoami,
+            iv2: iv2,
+            type: type
+        };
 
-    const data_package_encrypted = encrypt_data(data_package, CRYPTOKEY, iv);
-    const sealed_data_package = {
-        data_package_encrypted: data_package_encrypted,
-        iv: iv
+        const data_package_encrypted = encrypt_data(data_package, CRYPTOKEY, iv);
+        const sealed_data_package = {
+            data_package_encrypted: data_package_encrypted,
+            iv: iv
+        }
+        return sealed_data_package;
+    } catch {
+        return null;
     }
-    return sealed_data_package;
 }
 
 function data_unpacking(data_to_unpack) {
     return new Promise((resolve, reject) => {
         let sealed_data_package = JSON.parse(data_to_unpack);
+        if (!validate_sealed_data_package(sealed_data_package)) { reject("Data Missing @ RRBDT"); }
         const data_package = decrypt_data(sealed_data_package.data_package_encrypted, CRYPTOKEY, sealed_data_package.iv);
         const whoareyou = decrypt_data(data_package.whoami, CRYPTOKEY, data_package.iv2);
-        if (whoareyou !== "test") { reject("Unable to Unpack Data @ RRBDT"); }
+        if (whoareyou !== "test") { reject("Data Corrupted @ RRBDT"); }
         else {
             const decrypted_data = decrypt_data(data_package.encrypted_data, CRYPTOKEY, data_package.iv1);
             const data_to_handle = {
@@ -51,14 +57,7 @@ function data_unpacking(data_to_unpack) {
 function send_data(front_data, type) {
     return new Promise((resolve, reject) => {
         const package = data_packing(front_data, type);
-        if (
-            !package ||
-            typeof package !== 'object' ||
-            !package.hasOwnProperty('data_package_encrypted') ||
-            !package.hasOwnProperty('iv') ||
-            typeof package.data_package_encrypted !== 'string' ||
-            typeof package.iv !== 'object'
-        ) {
+        if (!validate_packed_data(package)) {
             reject("Invalid data package structure @ RRBDT");
             throw new Error("Invalid data package structure!");
         }
@@ -72,7 +71,7 @@ function send_data(front_data, type) {
         /* ---connected--- */
         socket.on('connect', () => {
             try {
-                socket.write(JSON.stringify(package));            
+                socket.write(JSON.stringify(package));
             } catch (error) {
                 reject("Unable to send data @ RRBDT");
                 socket.destroy();
@@ -81,21 +80,30 @@ function send_data(front_data, type) {
         });
         /* ---incomming data--- */
         socket.on('data', (sec_data) => {
-            console.log(sec_data);
-            /*data_unpacking(sec_data)
+            data_unpacking(sec_data)
                 .then((response) => {
-                    console.log(response);
+
+
+                    //OMG FINNALY! I CAN HANDLE THE FUCKING DATA...................
+
+
+
+                    
                     if (response.type === "success") {
+                        resolve(response.decrypted_data);
+                        socket.end();
+                    } else if (response.type === "error") {
+                        reject(response.decrypted_data);
                         socket.end();
                     } else {
                         reject(response.decrypted_data);
                         socket.end();
-                    }                    
+                    }
                 })
                 .catch((error) => {
                     reject(error);
                     socket.destroy();
-                });*/
+                });
             /*if (unpacked_data === "Unable to Unpack Data @ RRBDT") {
                 reject("Unable to Unpack Data @ RRBDT");
                 socket.destroy();
@@ -127,15 +135,13 @@ function send_data(front_data, type) {
         })
         /* ---socket closed--- */
         socket.on('timeout', () => {
-            console.log('Socket timed out');
             reject("Connection timed out @ RRBDT");
-            socket.destroy();
+            socket.end();
         });
         socket.on('end', () => {
             console.log('-----Socket Closed!-----\n');
         });
         socket.on('error', (err) => {
-            console.error('Error:', err);
             socket.destroy();
             reject("Can't Reach Server @ RRBDT");
         });
