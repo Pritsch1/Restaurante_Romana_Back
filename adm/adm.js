@@ -4,11 +4,40 @@ const REACT_CRYPTOKEY = process.env.RRREACT_APP_CRYPTOKEY;
 /* ---Dependencies--- */
 const express = require('express');
 const router = express.Router();
-//const cookie = require('cookie');
+const cookie = require('cookie');
 /* ---My Files--- */
 const { send_data } = require('.././data_transfer/data_transfer_2sec');
 const { create_iv, encrypt_data, decrypt_data, decrypt_data_react } = require('.././encrypt');
 const { validate_signin_request, validate_signup_request } = require('./adm_validate');
+
+
+
+router.post('/auth', async (req, res) => {    
+    const token = req.cookies.jwtTokenn;
+
+    if (!token) {
+        res.send(false);
+        res.end();
+    } else {
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject('Connection timed out @ RRBA');
+            }, 20000);
+        });
+
+        Promise.race([send_data(token, "auth"), timeoutPromise])
+            .then((response) => {
+                console.log(response);
+                res.send(true);
+                res.end();
+            })
+            .catch((error) => {
+                console.log("?", error);
+                res.send(false);
+                res.end();
+            });
+    }    
+})
 
 /* ---in--- */
 router.post('/receive_signin', async (req, res) => {
@@ -23,7 +52,20 @@ router.post('/receive_signin', async (req, res) => {
         Promise.race([send_data(front_data, "adm_signin"), timeoutPromise])
             .then((response) => { //handle lack of data here
 
-                res.status(200).send(response);
+                //for now I'll hardcode adding the JWT token
+
+                res.setHeader(
+                    'Set-Cookie',
+                    cookie.serialize('jwtTokenn', response, {
+                        httpOnly: true,
+                        maxAge: 3600, // Set the expiration time in seconds
+                        sameSite: 'none', // Recommended for preventing CSRF
+                        secure: true, // Recommended for HTTPS
+                        path: '/', // The path where the cookie is accessible
+                    })
+                );
+
+                res.status(200).send("YAAAAAAY");
                 res.end();
             })
             .catch((error) => {

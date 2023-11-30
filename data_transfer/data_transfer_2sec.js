@@ -82,10 +82,10 @@ function send_data(front_data, type) {
         socket.on('data', (sec_data) => {
             data_unpacking(sec_data)
                 .then((response) => {
-
+                    
 
                     //OMG FINNALY! I CAN HANDLE THE FUCKING DATA...................
-
+                    //gotta add the operation like... adding a JWT token
 
 
                     

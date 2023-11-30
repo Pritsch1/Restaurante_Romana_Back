@@ -6,17 +6,19 @@ const EXPRESS_PORT = process.env.RREXPRESS_PORT;
 const cors = require('cors');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 /* ---My Files--- */
 const forms = require('./forms');
 const adm = require('./adm/adm');
 /* --- rate limitting --- */
 const limit = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 5, // 100 requests per minute
+    max: 500, // 100 requests per minute
 });
 /* ---uses--- */
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 //app.use(cors());
 
 
